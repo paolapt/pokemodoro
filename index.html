@@ -749,6 +749,10 @@ body[data-theme="Ditto"] {
 
   let saved = {};
 
+  try {
+    saved = JSON.parse(localStorage.getItem('pokemodoro')) || {};
+  } catch (_) {}
+
   const settings = {
     ...defaults,
     ...saved,
@@ -811,7 +815,7 @@ body[data-theme="Ditto"] {
 
   function save() {
     try {
-      localStorage.setItem('pokedoro', JSON.stringify(settings));
+      localStorage.setItem('pokemodoro', JSON.stringify(settings));
     } catch (_) {}
   }
 
@@ -851,7 +855,7 @@ body[data-theme="Ditto"] {
       ? 'Focus'
       : mode === 'short' ? 'Short break' : 'Long break';
 
-    document.title = `${fmt(remaining)} · ${modeName} — slow days`;
+    document.title = `${fmt(remaining)} · ${modeName}`;
   }
 
   function stopTimer() {
