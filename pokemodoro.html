@@ -1,0 +1,1089 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pao's mini pomodoro</title>
+
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f9;
+  --surface: #bbcdde;
+  --surface-2: #bbcdde;
+  --ink: #636363;
+  --muted: #88796d;
+  --line: #bbcdde;
+  --accent: #bbcdde;
+  --shadow: 0 18px 55px rgb(80 55 35 / 8%);
+  --font: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+  transition: background .3s ease;
+}
+
+
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+
+.app-root {
+  min-height: 100vh;
+  padding: 30px 20px 38px;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+
+/* header w app name and settings button */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+/*star icon + square */
+.brand { 
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--surface-2);
+  font-size: 22px;
+}
+/**/
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.7px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.settings-toggle {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--ink);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  transition: background .2s, color .2s;
+}
+
+.settings-toggle:hover,
+.settings-toggle[aria-expanded="true"] {
+  background: var(--ink);
+  color: var(--page);
+}
+
+.gear-icon {
+  font-size: 18px;
+  line-height: 1;
+  transition: transform .25s ease;
+}
+
+/*mini animation when clicked*/
+.settings-toggle[aria-expanded="true"] .gear-icon {
+  transform: rotate(45deg);
+}
+
+/*center timer + limit width*/
+.layout {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.layout.settings-open {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+  gap: 20px;
+  max-width: 960px;
+}
+
+/*main timer section*/
+.timer-card {
+  min-height: 510px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/*row w focus short break and long break buttons*/
+.mode-tabs {
+  display: flex;
+  gap: 9px;
+  width: 100%;
+}
+
+/*highlight when hovering*/
+.mode-tab {
+  flex: 1;
+  border: 1px solid var(--ink);
+  border-radius: 12px;
+  padding: 11px 7px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  transition: background .2s, color .2s;
+}
+
+.mode-tab:hover,
+.mode-tab[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--page);
+  font-weight: 700;
+}
+
+.clock {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(76px, 12vw, 112px);
+  line-height: 1;
+  letter-spacing: -6px;
+  font-weight: 650;
+  margin: 30px 0 12px;
+}
+
+/*progress indicator + fill line*/
+.progress-track {
+  height: 5px;
+  width: min(280px, 80%);
+  border-radius: 20px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 20px;
+  background: var(--accent);
+  transition: width .25s linear;
+}
+
+/*msg below progress bar*/
+.mood {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/*start & reset buttons*/
+.timer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+/*button appearance*/
+.primary,
+.secondary,
+.icon-button {
+  border: 1px solid var(--ink);
+  border-radius: 14px;
+  padding: 13px 22px;
+  font-weight: 700;
+  transition: transform .15s, background .2s, color .2s;
+  background: transparent;
+  color: var(--ink);
+}
+
+
+
+.primary:hover,
+.secondary:hover,
+.icon-button:hover {
+  transform: translateY(-1px);
+  background: var(--ink);
+  color: var(--page);
+}
+/**/
+
+
+/*centers symbols for start + reset buttons & makes them square*/
+.icon-button {
+  width: 46px;
+  height: 46px;
+  padding: 10px;
+  display: grid;
+  place-items: center;
+}
+
+
+/*settings column hidden originally*/
+.right-column {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.layout.settings-open .right-column {
+  display: flex;
+  animation: reveal-settings .2s ease;
+}
+
+@keyframes reveal-settings {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-card {
+  padding: 20px 24px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 19px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: -.4px;
+}
+
+.duration-list {
+  display: grid;
+  gap: 15px;
+}
+
+.duration-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.duration-label {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.duration-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stepper {
+  width: 29px;
+  height: 29px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+
+.duration-value {
+  min-width: 49px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 21px 0;
+}
+
+.counter-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.counter-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.counter-number {
+  font-size: 25px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-button {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 5px 0;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.theme-option {
+  border: 2px solid transparent;
+  border-radius: 13px;
+  padding: 4px;
+  background: transparent;
+  color: var(--ink);
+  min-width: 0;
+}
+
+.theme-option[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+
+.swatch {
+  display: block;
+  width: 100%;
+  height: 50px;
+}
+
+.theme-name {
+  display: block;
+  font-size: 10px;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.sound-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sound-row label,
+.volume-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+select {
+  width: 58%;
+  max-width: 190px;
+  border: 1px solid var(--line);
+  background: var(--page);
+  color: var(--ink);
+  border-radius: 11px;
+  padding: 10px 9px;
+  font-size: 12px;
+}
+
+.volume-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+  width: 100%;
+  cursor: pointer;
+}
+
+.volume-number {
+  font-size: 12px;
+  min-width: 34px;
+  text-align: right;
+  color: var(--muted);
+}
+
+.sound-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  gap: 12px;
+}
+
+.sound-actions .secondary {
+  padding: 9px 13px;
+  font-size: 12px;
+}
+
+.toggle-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 22px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  pointer-events: none;
+  background: var(--ink);
+  color: var(--surface);
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  transition: opacity .25s, transform .25s;
+  z-index: 5;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* https://www.pokemonpalette.com/ */
+/* https://pokemondb.net/sprites */
+/* https://pokepalettes.com/#umbreon */
+
+body[data-theme="Oshawott"] {
+  --page: #c2e3e6;
+  --surface: #b1dcdf;
+  --surface-2: #29bdc5;
+  --ink: #31416a;
+  --muted: #5D5D6A;
+  --line: #8b5a31;
+  --accent: #c59429;
+}
+
+body[data-theme="Umbreon"] {
+  --page: #29314a;
+  --surface: #1b2238;
+  --surface-2: #62627b;
+  --ink: #dbdada;
+  --muted: #a3a3a3;
+  --line: #b49429;
+  --accent: #ac414a;
+}
+
+body[data-theme="Stufful"] {
+  --page: #f4d0d6;
+  --surface: #ffa6b5;
+  --surface-2: #ffa6b5;
+  --ink: #76554a;
+  --muted: #a17c80;
+  --line: #ffa6b5;
+  --accent: #5a382d;
+}
+
+body[data-theme="Ditto"] {
+  --page: #ecd6f3;
+  --surface: #5a1894;
+  --surface-2: #ffcdff;
+  --ink: #52376b;
+  --muted: #8b80a1;
+  --line: #b46acd;
+  --accent: #a395c2;
+}
+
+@media (max-width: 720px) {
+  .app-root { padding: 20px 13px 28px; }
+
+  .layout.settings-open {
+    grid-template-columns: 1fr;
+  }
+
+  .timer-card {
+    min-height: 450px;
+    padding: 22px;
+  }
+
+  .clock {
+    font-size: clamp(78px, 20vw, 105px);
+  }
+
+  .settings-card { padding: 21px; }
+  .right-column { gap: 13px; }
+  .topbar { margin-bottom: 19px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    scroll-behavior: auto !important;
+    animation: none !important;
+  }
+}
+</style>
+</head>
+
+
+
+
+
+
+<body>
+<main class="app-root">
+  <div class="app">
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">☆</div>
+        <div>
+          <div class="brand-name">pomodoro timer!</div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button
+          class="settings-toggle"
+          id="settingsToggle"
+          aria-expanded="false"
+          aria-controls="rightColumn"
+          aria-label="Open settings"
+          title="Settings"
+        ><span class="gear-icon" aria-hidden="true">⚙</span></button>
+      </div>
+    </header>
+
+    <div class="layout" id="mainLayout">
+
+      <section class="timer-card" aria-label="Pomodoro timer">
+        <div class="mode-tabs" role="tablist" aria-label="Session type">
+          <button class="mode-tab" data-mode="focus" role="tab" aria-selected="true">Focus</button>
+          <button class="mode-tab" data-mode="short" role="tab" aria-selected="false">Short break</button>
+          <button class="mode-tab" data-mode="long" role="tab" aria-selected="false">Long break</button>
+        </div>
+
+        <div class="clock" id="clock">25:00</div>
+
+        <div class="progress-track" aria-label="Session progress">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="mood" id="moodText">you got this! :3</div>
+
+        <div class="timer-actions">
+          <button class="primary icon-button" id="startButton" aria-label="Start timer" title="Start timer">▶</button>
+          <button class="secondary icon-button" id="resetButton" aria-label="Reset current timer" title="Reset timer">↻</button>
+        </div>
+      </section>
+
+      <aside class="right-column" id="rightColumn">
+
+        <section class="settings-card">
+          <div class="section-heading">
+            <h2>Session lengths</h2>
+          </div>
+
+          <div class="duration-list">
+            <div class="duration-row">
+              <span class="duration-label">Focus</span>
+              <div class="duration-controls">
+                <button class="stepper" data-adjust="focus" data-delta="-1" aria-label="Decrease focus length">−</button>
+                <span class="duration-value" id="focusValue">25 min</span>
+                <button class="stepper" data-adjust="focus" data-delta="1" aria-label="Increase focus length">+</button>
+              </div>
+            </div>
+
+            <div class="duration-row">
+              <span class="duration-label">Short break</span>
+              <div class="duration-controls">
+                <button class="stepper" data-adjust="short" data-delta="-1" aria-label="Decrease short break length">−</button>
+                <span class="duration-value" id="shortValue">5 min</span>
+                <button class="stepper" data-adjust="short" data-delta="1" aria-label="Increase short break length">+</button>
+              </div>
+            </div>
+
+            <div class="duration-row">
+              <span class="duration-label">Long break</span>
+              <div class="duration-controls">
+                <button class="stepper" data-adjust="long" data-delta="-1" aria-label="Decrease long break length">−</button>
+                <span class="duration-value" id="longValue">15 min</span>
+                <button class="stepper" data-adjust="long" data-delta="1" aria-label="Increase long break length">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+
+          <div class="counter-card">
+            <div class="counter-title">Focus sessions completed</div>
+
+            <span class="counter-number" id="counter">0</span>
+
+            <button class="text-button" id="resetCounter">
+              Reset counter
+            </button>
+          </div>
+        </section>
+
+
+        <section class="settings-card">
+          <div class="section-heading">
+            <h2>Color theme</h2>
+          </div>
+
+          <div class="theme-grid" id="themeGrid" role="group" aria-label="Color theme">
+            <button class="theme-option" data-theme="Tandemaus" aria-pressed="true">
+              <img class="swatch" src="sprites/tandemaus.png" alt="Tandemaus theme preview">
+              <span class="theme-name">Tandemaus</span>
+            </button>
+            <button class="theme-option" data-theme="Oshawott" aria-pressed="false">
+              <img class="swatch" src="sprites/oshawott.png" alt="Oshawott theme preview">
+              <span class="theme-name">Oshawott</span>
+            </button>
+            <button class="theme-option" data-theme="Stufful" aria-pressed="false">
+              <img class="swatch" src="sprites/stufful.png" alt="Stufful theme preview">
+              <span class="theme-name">Stufful</span>
+            </button>
+            <button class="theme-option" data-theme="Ditto" aria-pressed="false">
+              <img class="swatch" src="sprites/ditto.png">
+              <span class="theme-name">Ditto</span>
+            </button>
+            <button class="theme-option" data-theme="Umbreon" aria-pressed="false">
+              <img class="swatch" src="sprites/umbreon.png">
+              <span class="theme-name">Umbreon</span>
+            </button>
+          </div>
+        </section>
+
+
+        <section class="settings-card">
+          <div class="section-heading">
+            <h2>Alerts</h2>
+          </div>
+
+          <div class="sound-row">
+            <label for="alarmSound">Select sound</label>
+            <select id="alarmSound">
+              <option value="bell">Soft bell</option>
+              <option value="digital">Alarm beep</option>
+            </select>
+          </div>
+
+          <div class="volume-label" style="margin-bottom:9px">Volume</div>
+          <div class="volume-line">
+            <span aria-hidden="true">◖</span>
+            <input type="range" id="volume" min="0" max="100" value="55" aria-label="Alarm volume">
+            <span class="volume-number" id="volumeNumber">55%</span>
+          </div>
+
+          <!-- button for testingsounds + checkbox to enable/disable-->
+          <div class="sound-actions">
+            <button class="secondary" id="previewSound">&nbsp;Preview!</button>
+            <label class="toggle-line">
+              <input type="checkbox" id="alarmEnabled" checked>
+              Alarm on
+            </label>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <button class="text-button" id="resetSettings">Reset to default</button>
+        </section>
+
+      </aside>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const defaults = {
+    durations: { focus: 25, short: 5, long: 15 },
+    theme: 'Tandemaus',
+    sound: 'bell',
+    volume: 55,
+    alarm: true,
+    background: '',
+    counter: 0
+  };
+
+
+  let saved = {};
+
+ c
+
+  const settings = {
+    ...defaults,
+    ...saved,
+    durations: { ...defaults.durations, ...saved.durations }
+  };
+
+  let mode = 'focus';
+  let remaining = total();
+  let deadline = null;
+  let interval = null;
+  let running = false;
+  let audioContext = null;
+  let toastTimeout = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function total() {
+    return settings.durations[mode] * 60;
+  }
+
+  function secondsLeft() {
+    return Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  }
+
+  function syncControls() {
+    applyTheme();
+    $('alarmSound').value = settings.sound;
+    $('volume').value = settings.volume;
+    $('volumeNumber').textContent = settings.volume + '%';
+    $('alarmEnabled').checked = settings.alarm;
+  }
+
+  function applyTheme() {
+    document.body.dataset.theme = settings.theme;
+
+    document.querySelectorAll('#themeGrid .theme-option').forEach(btn => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.theme === settings.theme));
+    });
+  }
+
+
+  const moods = {
+    focus: 'you got this! :3',
+    short: 'relax a little :>',
+    long: 'long break time :O'
+  };
+
+  //settings panel toggle
+  $('settingsToggle').addEventListener('click', () => {
+    const isOpen = $('settingsToggle').getAttribute('aria-expanded') === 'true';
+    const nextOpen = !isOpen;
+
+    $('settingsToggle').setAttribute('aria-expanded', String(nextOpen));
+    $('settingsToggle').setAttribute(
+      'aria-label',
+      nextOpen ? 'Close settings' : 'Open settings'
+    );
+    $('mainLayout').classList.toggle('settings-open', nextOpen);
+  });
+
+  function save() {
+    try {
+      localStorage.setItem('pokedoro', JSON.stringify(settings));
+    } catch (_) {}
+  }
+
+  function showToast(message) {
+    $('toast').textContent = message;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => $('toast').classList.remove('show'), 2300);
+  }
+
+  function fmt(seconds) {
+    const s = Math.max(0, Math.ceil(seconds));
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function render() {
+    $('clock').textContent = fmt(remaining);
+    $('moodText').textContent = moods[mode];
+
+    $('startButton').textContent = running ? 'Ⅱ' : '▶';
+    $('startButton').setAttribute(
+      'aria-label',
+      running ? 'Pause timer' : 'Start timer'
+    );
+    $('startButton').title = running ? 'Pause timer' : 'Start timer';
+
+    const progress = (1 - remaining / total()) * 100;
+    $('progressFill').style.width = `${Math.max(0, Math.min(100, progress))}%`;
+
+    $('counter').textContent = settings.counter;
+
+    for (const key of Object.keys(settings.durations)) {
+      $(key + 'Value').textContent = `${settings.durations[key]} min`;
+    }
+
+    const modeName = mode === 'focus'
+      ? 'Focus'
+      : mode === 'short' ? 'Short break' : 'Long break';
+
+    document.title = `${fmt(remaining)} · ${modeName} — slow days`;
+  }
+
+  function stopTimer() {
+    running = false;
+    deadline = null;
+
+    clearInterval(interval);
+    interval = null;
+  }
+
+  function resetTimer() {
+    stopTimer();
+    remaining = total();
+    render();
+  }
+
+  function setMode(nextMode) {
+    mode = nextMode;
+
+    document.querySelectorAll('.mode-tab').forEach(btn => {
+      btn.setAttribute('aria-selected', String(btn.dataset.mode === mode));
+    });
+
+    resetTimer();
+  }
+
+  function getAudio() {
+    audioContext ||= new AudioContext();
+
+    if (audioContext.state === 'suspended') audioContext.resume();
+
+    return audioContext;
+  }
+
+  function tone(freq, start, duration, type, volume, ctx) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(
+      volume, start + 0.01
+    );
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(start);
+    osc.stop(start + duration + 0.01);
+  }
+
+  function playAlarm() {
+    if (settings.volume === 0) return;
+
+    const ctx = getAudio();
+
+    const now = ctx.currentTime;
+    const vol = settings.volume / 100 * 0.16;
+
+
+    // https://sfxengine.com/sound-effects/chime for finding something that sounds nice
+    // https://pitchdetector.com/frequency-detector/ for reverse engineering the notes :) lol
+    const patterns = {
+      bell: [
+        [432.37, 0, .2, 'sine'],
+        [586.98, .2, .4, 'sine'],
+        [736, .4, .6, 'sine'],
+        [880.02, 0.6, .8, 'sine'],
+      ],
+
+      digital: [
+        [1760, 0, .2, 'square'],
+        [1760, .2, .2, 'square'],
+        [1760, .4, .2, 'square'],
+        [1760, .6, .2, 'square']
+      ],
+    };
+
+    patterns[settings.sound].forEach(([freq, offset, duration, type]) => {
+      const volume = vol * (type === 'square' ? .35 : 1);
+      tone(freq, now + offset, duration, type, volume, ctx);
+    });
+  }
+
+  function finishSession() {
+    stopTimer();
+    remaining = 0;
+
+    if (mode === 'focus') {
+      settings.counter += 1;
+      save();
+    }
+
+    render();
+    if (settings.alarm) playAlarm();
+
+    showToast(
+      mode === 'focus'
+        ? 'you are done!'
+        : 'break time over!'
+    );
+
+    $('moodText').textContent = mode === 'focus'
+      ? 'you did it yay! take a little break!'
+      : 'let\'s keep going!';
+  }
+
+  function tick() {
+    if (!running) return;
+
+    remaining = secondsLeft();
+
+    if (remaining <= 0) {
+      finishSession();
+    } else {
+      render();
+    }
+  }
+
+  function startPause() {
+    if (running) {
+      remaining = secondsLeft();
+      stopTimer();
+      render();
+      return;
+    }
+
+    if (remaining <= 0) {
+      remaining = total();
+    }
+
+    getAudio();
+
+    running = true;
+    deadline = Date.now() + remaining * 1000;
+    interval = setInterval(tick, 200);
+
+    render();
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(btn => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+
+  document.querySelectorAll('[data-adjust]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.adjust;
+      const change = Number(btn.dataset.delta);
+
+      settings.durations[key] = Math.min(
+        180,
+        Math.max(1, settings.durations[key] + change)
+      );
+
+      if (mode === key && !running) {
+        remaining = total();
+      }
+
+      save();
+      render();
+    });
+  });
+
+  $('startButton').addEventListener('click', startPause);
+
+  $('resetButton').addEventListener('click', () => {
+    resetTimer();
+    showToast('Timer reset');
+  });
+
+  $('resetCounter').addEventListener('click', () => {
+    settings.counter = 0;
+    save();
+    render();
+    showToast('Focus counter reset');
+  });
+
+  document.querySelectorAll('#themeGrid .theme-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      settings.theme = btn.dataset.theme;
+      applyTheme();
+      save();
+    });
+  });
+
+  $('alarmSound').addEventListener('change', event => {
+    settings.sound = event.target.value;
+    save();
+  });
+
+  $('volume').addEventListener('input', event => {
+    settings.volume = Number(event.target.value);
+    $('volumeNumber').textContent = settings.volume + '%';
+    save();
+  });
+
+  $('alarmEnabled').addEventListener('change', event => {
+    settings.alarm = event.target.checked;
+    save();
+  });
+
+  $('previewSound').addEventListener('click', () => {
+    if (settings.volume === 0) {
+      showToast('Turn up the volume to preview your sound');
+      return;
+    }
+
+    playAlarm();
+  });
+
+  //defaults
+  $('resetSettings').addEventListener('click', () => {
+    Object.assign(settings, defaults, {
+      durations: { ...defaults.durations },
+      counter: settings.counter
+    });
+
+    syncControls();
+    resetTimer();
+    save();
+    showToast('Settings reset');
+  });
+  
+
+  syncControls();
+  render();
+})();
+</script>
+</body>
+</html>
